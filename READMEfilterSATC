@@ -1,0 +1,72 @@
+### detect potential sex-linked scaffolds with SATC https://github.com/popgenDK/SATC
+### provides lists of scaffolds putatively assigned to autosomes and both sex chromosomes
+### counts length of sequence for each chromosome type in the assembly
+### requires map1.notRepeat file for final number of informative sites
+
+#here females=ZW males=ZZ
+
+#requires list of idxstats files from bamfiles
+
+#filter output from SATC
+#create sca lists for autosomes and both sex chr if found in reference
+
+#run as : for i in $(cat 3ids) ; do ./READMEfilterSATC $i ; done
+
+#assumes SATC was run as 
+
+#list=$1 
+#satc=../bin/SATC/satc.R
+
+#Rscript --vanilla $satc -i $list -o ${list}.median.m10k.M10 --useMedian TRUE --minLength 10000 --M 10
+
+###########################
+prefix=$1
+tag=_scaffSex.tsv
+
+out=${prefix%$tag}
+
+head -1 ./${prefix}*_scaffSex.tsv > ${out}.scaffSex.putchrZ.tsv
+head -1 ./${prefix}*_scaffSex.tsv > ${out}.scaffSex.putchrW.tsv
+head -1 ./${prefix}*_scaffSex.tsv > ${out}.auto.tsv
+
+#keep scas which are within -1/3 of median or +2/3 of median in autosomes
+
+#stricter for sex chr
+
+#for chrW 0.33-0.66 in females, <0.1 in males
+
+#for chrZ 0.33-0.66 in females, 0.6-1.7 in males 
+
+cat ./${prefix}*_scaffSex.tsv | grep TRUE | awk '$7>0.33 {print $0}' | awk '$7<0.66 {print $0}' | awk '$6>0.7 {print $0}' | awk '$6<1.7 {print $0}'  >> ${out}.scaffSex.putchrZ.tsv
+
+#these can potentially be chrW (confirming reference sex)
+
+#for chrW 0.33-0.66 in females, <0.1 in males
+
+cat ./${prefix}*_scaffSex.tsv | awk '$7>0.33 {print $0}'  | awk '$7<0.66 {print $0}' | awk '$6<0.1 {print $0}' >>  ${out}.scaffSex.putchrW.tsv 
+
+#for autosomes 0.6-1.7
+
+egrep -v TRUE ./${prefix}*_scaffSex.tsv | awk '$6>0.7 {print $0}' | awk '$6<1.7 {print $0}' | awk '$7>0.7 {print $0}' | awk '$7<1.7 {print $0}' >> ${out}.auto.tsv
+
+#get intervals without rep with map1 for the 3 subsets
+#output from /home/fonseca/MOUNTAIN/REFERENCES/XENODACTIS_PARINA/README_fullAssemblyCleaningPipeline_Jan2022-part1.sh
+map1NotRep=${prefix}*map1.notRep.bed
+
+awk 'FNR==NR{A[$1]=1;next} A[$1]' ${out}.scaffSex.putchrZ.tsv $map1NotRep > ${out}.scaffSex.putchrZ.map1NotRep.bed 
+
+awk 'FNR==NR{A[$1]=1;next} A[$1]' ${out}.scaffSex.putchrW.tsv $map1NotRep > ${out}.scaffSex.putchrW.map1NotRep.bed
+
+awk 'FNR==NR{A[$1]=1;next} A[$1]' ${out}.auto.tsv $map1NotRep > ${out}.auto.map1NotRep.bed
+
+#filter for a minimum of 10K sites with info per sca
+
+#check final number on non-repeat/low map sites and output sca info if more than Xkb OK sites (non-repeat + map1 + not-sex)
+
+python sum-nonrepeats.py 10 ${out}.scaffSex.putchrZ.map1NotRep.bed ${prefix}*_scaffSex.tsv
+
+python sum-nonrepeats.py 10 ${out}.scaffSex.putchrW.map1NotRep.bed ${prefix}*_scaffSex.tsv 
+
+python sum-nonrepeats.py 10 ${out}.auto.map1NotRep.bed ${prefix}*_scaffSex.tsv
+
+
