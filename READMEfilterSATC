@@ -1,7 +1,7 @@
-### detect potential sex-linked scaffolds with SATC https://github.com/popgenDK/SATC
-### provides lists of scaffolds putatively assigned to autosomes and both sex chromosomes
-### counts length of sequence for each chromosome type in the assembly
-### requires map1.notRepeat file for final number of informative sites
+## detect potential sex-linked scaffolds with SATC https://github.com/popgenDK/SATC
+## provides lists of scaffolds putatively assigned to autosomes and both sex chromosomes
+## counts length of sequence for each chromosome type in the assembly
+## requires map1.notRepeat file for final number of informative sites
 
 #here females=ZW males=ZZ
 
